@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net/http"
 	"time"
 
 	jwt "github.com/appleboy/gin-jwt/v2"
@@ -42,6 +43,16 @@ func InitParams() *jwt.GinJWTMiddleware {
 		// TokenLookup: "cookie:token",
 		TokenHeadName: "Bearer",
 		TimeFunc:      time.Now,
+
+		SendCookie:     true,
+		SecureCookie:   false,
+		CookieHTTPOnly: true,
+		CookieDomain:   "localhost:8080",
+		CookieSameSite: http.SameSiteDefaultMode,
+
+		LoginResponse: func(c *gin.Context, code int, message string, time time.Time) {
+			c.Redirect(http.StatusFound, "/classes")
+		},
 	}
 }
 

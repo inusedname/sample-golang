@@ -6,13 +6,18 @@
     <title>Login to LMS</title>
 </head>
 <body>
-    <div>
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" placeholder="Enter your username">
-    </div>
-    <div>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" placeholder="Enter your password">
-    </div>
+    <form action="/login" method="POST">
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" placeholder="Enter your username">
+        </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password">
+        </div>
+        <div>
+            <input type="submit" value="Login">
+        </div>
+    </form>
 </body>
 </html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student's Classes</title>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
+                <td>ID</td>
+                <td>Course Name</td>
+                <td>Grade</td>
+                <td>Actions</td>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Attendances}}
+            <tr>
+                <td>{{.ID}}</td>
+                <td>{{.Course.Name}}</td>
+                <td>{{.Grade}}</td>
+                <td></td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</body>
+</html>
