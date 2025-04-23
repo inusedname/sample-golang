@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"app/constants"
 	models "app/data"
 	"log"
 	"net/http"
@@ -16,10 +17,6 @@ type login struct {
 	Password string `form:"password" json:"password" binding:"required"`
 }
 
-var (
-	IdentityKey = "id"
-)
-
 func InitParams(db *gorm.DB) *jwt.GinJWTMiddleware {
 
 	return &jwt.GinJWTMiddleware{
@@ -27,13 +24,12 @@ func InitParams(db *gorm.DB) *jwt.GinJWTMiddleware {
 		Key:         []byte("secret key"),
 		Timeout:     time.Hour,
 		MaxRefresh:  time.Hour,
-		IdentityKey: IdentityKey,
+		IdentityKey: constants.IdentityKey,
 		PayloadFunc: payloadFunc(),
 
-		IdentityHandler: identityHandler(db),
-		Authenticator:   authenticator(db),
-		Unauthorized:    unauthorized(),
-		TokenLookup:     "header: Authorization, query: token, cookie: jwt",
+		Authenticator: authenticator(db),
+		Unauthorized:  unauthorized(),
+		TokenLookup:   "header: Authorization, query: token, cookie: jwt",
 		// TokenLookup: "query:token",
 		// TokenLookup: "cookie:token",
 		TokenHeadName: "Bearer",
@@ -52,11 +48,10 @@ func InitParams(db *gorm.DB) *jwt.GinJWTMiddleware {
 }
 
 func payloadFunc() func(data any) jwt.MapClaims {
-	log.Printf("payloadFunc")
 	return func(data any) jwt.MapClaims {
 		if v, ok := data.(*models.User); ok {
 			return jwt.MapClaims{
-				IdentityKey: v.ID,
+				constants.IdentityKey: v.ID,
 			}
 		}
 		return jwt.MapClaims{}
@@ -64,7 +59,6 @@ func payloadFunc() func(data any) jwt.MapClaims {
 }
 
 func authenticator(db *gorm.DB) func(c *gin.Context) (any, error) {
-	log.Printf("authenticator")
 	return func(c *gin.Context) (any, error) {
 		var loginVals login
 		if err := c.ShouldBind(&loginVals); err != nil {
@@ -83,15 +77,6 @@ func authenticator(db *gorm.DB) func(c *gin.Context) (any, error) {
 		var user models.User
 		db.Where("user_credential_id = ?", userCred.ID).First(&user)
 		return &user, nil
-	}
-}
-
-func identityHandler(db *gorm.DB) func(c *gin.Context) interface{} {
-	return func(c *gin.Context) interface{} {
-		claims := jwt.ExtractClaims(c)
-		var user models.User
-		db.Preload("UserPermissionDef").Where("id = ?", claims[IdentityKey]).First(&user)
-		return &user
 	}
 }
 

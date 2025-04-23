@@ -2,7 +2,7 @@ package viewcontrollers
 
 import (
 	models "app/data"
-	"app/middleware"
+	"app/use_cases"
 	"html/template"
 
 	"github.com/gin-gonic/gin"
@@ -16,15 +16,14 @@ type studentClassesData struct {
 func GetStudentClasses(db *gorm.DB) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		tmpl := template.Must(template.ParseFiles("html/student_attendances.html"))
-		var attendances []models.Attendance
-		var user = c.MustGet(middleware.IdentityKey).(*models.User)
+		var user = models.GetUser(db, c)
 		if !user.UserPermissionDef.ViewAttendance {
 			c.HTML(403, "unauthorized.html", gin.H{
 				"Reason": "You don't have permission to view classes",
 			})
 			return
 		}
-		db.Where("student_id = ?", user.ID).Find(&attendances)
+		attendances := use_cases.GetStudentAttendances(db, user.ID)
 		tmpl.Execute(c.Writer, studentClassesData{
 			Attendances: attendances,
 		})
