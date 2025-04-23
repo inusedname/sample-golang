@@ -30,9 +30,10 @@ func InitParams(db *gorm.DB) *jwt.GinJWTMiddleware {
 		IdentityKey: IdentityKey,
 		PayloadFunc: payloadFunc(),
 
-		Authenticator: authenticator(db),
-		Unauthorized:  unauthorized(),
-		TokenLookup:   "header: Authorization, query: token, cookie: jwt",
+		IdentityHandler: identityHandler(db),
+		Authenticator:   authenticator(db),
+		Unauthorized:    unauthorized(),
+		TokenLookup:     "header: Authorization, query: token, cookie: jwt",
 		// TokenLookup: "query:token",
 		// TokenLookup: "cookie:token",
 		TokenHeadName: "Bearer",
@@ -82,6 +83,15 @@ func authenticator(db *gorm.DB) func(c *gin.Context) (any, error) {
 		var user models.User
 		db.Where("user_credential_id = ?", userCred.ID).First(&user)
 		return &user, nil
+	}
+}
+
+func identityHandler(db *gorm.DB) func(c *gin.Context) interface{} {
+	return func(c *gin.Context) interface{} {
+		claims := jwt.ExtractClaims(c)
+		var user models.User
+		db.Preload("UserPermissionDef").Where("id = ?", claims[IdentityKey]).First(&user)
+		return &user
 	}
 }
 

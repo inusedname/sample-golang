@@ -24,6 +24,14 @@
             <input type="text" id="fullName" name="fullName" placeholder="Enter your full name" required>
         </div>
         <div>
+            <label for="role">Role:</label>
+            <select name="role" id="role">
+                <option value="student">Student</option>
+                <option value="teacher">Teacher</option>
+                <option value="manager">Manager</option>
+            </select>
+        </div>
+        <div>
             <input type="submit" value="Login">
             {{ if .Error }}}
             <p style="color: red;">{{ .Error }}</p>

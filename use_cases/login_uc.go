@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func CreateUser(db *gorm.DB, username string, password string, email string, fullName string) error {
+func CreateUser(db *gorm.DB, username string, password string, email string, fullName string, role string) error {
 	if db.Find(&models.User{}, "email = ?", email).RowsAffected != 0 {
 		return errors.ErrUserAlreadyExists{}
 	}
@@ -18,7 +18,7 @@ func CreateUser(db *gorm.DB, username string, password string, email string, ful
 			Username: username,
 			Password: password,
 		},
-		UserPermissionDef: models.NewUserPermissionDef("student"),
+		UserPermissionDef: models.NewUserPermissionDef(role),
 	}
 	db.Create(&user)
 	return nil

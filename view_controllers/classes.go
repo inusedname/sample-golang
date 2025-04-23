@@ -3,10 +3,8 @@ package viewcontrollers
 import (
 	models "app/data"
 	"app/middleware"
-	"errors"
 	"html/template"
 
-	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -19,14 +17,14 @@ func GetStudentClasses(db *gorm.DB) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		tmpl := template.Must(template.ParseFiles("html/student_attendances.html"))
 		var attendances []models.Attendance
-		var userId = jwt.ExtractClaims(c)[middleware.IdentityKey]
-		var user models.User
-		db.Preload("UserPermissionDef").Where("id = ?", userId).First(&user)
+		var user = c.MustGet(middleware.IdentityKey).(*models.User)
 		if !user.UserPermissionDef.ViewAttendance {
-			c.AbortWithError(403, errors.New("you don't have permission to view attendances"))
+			c.HTML(403, "unauthorized.html", gin.H{
+				"Reason": "You don't have permission to view classes",
+			})
 			return
 		}
-		db.Where("student_id = ?", userId).Find(&attendances)
+		db.Where("student_id = ?", user.ID).Find(&attendances)
 		tmpl.Execute(c.Writer, studentClassesData{
 			Attendances: attendances,
 		})

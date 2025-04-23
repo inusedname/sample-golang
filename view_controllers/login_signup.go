@@ -26,7 +26,8 @@ func HandlePostSignup(db *gorm.DB) func(c *gin.Context) {
 		password := c.Request.FormValue("password")
 		email := c.Request.FormValue("email")
 		fullName := c.Request.FormValue("fullName")
-		if err := use_cases.CreateUser(db, username, password, email, fullName); err != nil {
+		role := c.Request.FormValue("role")
+		if err := use_cases.CreateUser(db, username, password, email, fullName, role); err != nil {
 			c.HTML(http.StatusBadRequest, "signup.html", signUpData{
 				Error: err.Error(),
 			})
