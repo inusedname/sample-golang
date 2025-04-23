@@ -1,19 +1,15 @@
 package middleware
 
 import (
+	models "app/data"
+	"log"
 	"net/http"
 	"time"
 
 	jwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
-
-// User demo
-type User struct {
-	UserName  string
-	FirstName string
-	LastName  string
-}
 
 type login struct {
 	Username string `form:"username" json:"username" binding:"required"`
@@ -24,7 +20,7 @@ var (
 	IdentityKey = "id"
 )
 
-func InitParams() *jwt.GinJWTMiddleware {
+func InitParams(db *gorm.DB) *jwt.GinJWTMiddleware {
 
 	return &jwt.GinJWTMiddleware{
 		Realm:       "test zone",
@@ -34,11 +30,9 @@ func InitParams() *jwt.GinJWTMiddleware {
 		IdentityKey: IdentityKey,
 		PayloadFunc: payloadFunc(),
 
-		IdentityHandler: identityHandler(),
-		Authenticator:   authenticator(),
-		Authorizator:    authorizator(),
-		Unauthorized:    unauthorized(),
-		TokenLookup:     "header: Authorization, query: token, cookie: jwt",
+		Authenticator: authenticator(db),
+		Unauthorized:  unauthorized(),
+		TokenLookup:   "header: Authorization, query: token, cookie: jwt",
 		// TokenLookup: "query:token",
 		// TokenLookup: "cookie:token",
 		TokenHeadName: "Bearer",
@@ -56,27 +50,20 @@ func InitParams() *jwt.GinJWTMiddleware {
 	}
 }
 
-func identityHandler() func(c *gin.Context) any {
-	return func(c *gin.Context) any {
-		claims := jwt.ExtractClaims(c)
-		return &User{
-			UserName: claims[IdentityKey].(string),
-		}
-	}
-}
-
 func payloadFunc() func(data any) jwt.MapClaims {
+	log.Printf("payloadFunc")
 	return func(data any) jwt.MapClaims {
-		if v, ok := data.(*User); ok {
+		if v, ok := data.(*models.User); ok {
 			return jwt.MapClaims{
-				IdentityKey: v.UserName,
+				IdentityKey: v.ID,
 			}
 		}
 		return jwt.MapClaims{}
 	}
 }
 
-func authenticator() func(c *gin.Context) (any, error) {
+func authenticator(db *gorm.DB) func(c *gin.Context) (any, error) {
+	log.Printf("authenticator")
 	return func(c *gin.Context) (any, error) {
 		var loginVals login
 		if err := c.ShouldBind(&loginVals); err != nil {
@@ -85,31 +72,22 @@ func authenticator() func(c *gin.Context) (any, error) {
 		userID := loginVals.Username
 		password := loginVals.Password
 
-		if (userID == "admin" && password == "admin") || (userID == "test" && password == "test") {
-			return &User{
-				UserName:  userID,
-				LastName:  "Bo-Yi",
-				FirstName: "Wu",
-			}, nil
+		var userCred models.UserCredential
+		result := db.Where("username = ? AND password = ?", userID, password).First(&userCred)
+
+		if result.Error != nil {
+			log.Printf("Database error: %v", result.Error)
+			return nil, jwt.ErrFailedAuthentication
 		}
-		return nil, jwt.ErrFailedAuthentication
+		var user models.User
+		db.Where("user_credential_id = ?", userCred.ID).First(&user)
+		return &user, nil
 	}
 }
 
 func unauthorized() func(c *gin.Context, code int, message string) {
 	return func(c *gin.Context, code int, message string) {
-		c.JSON(code, gin.H{
-			"code":    code,
-			"message": message,
-		})
-	}
-}
-
-func authorizator() func(data any, c *gin.Context) bool {
-	return func(data any, c *gin.Context) bool {
-		if v, ok := data.(*User); ok && v.UserName == "admin" {
-			return true
-		}
-		return false
+		log.Printf("unauthorized, redirect to login.")
+		c.Redirect(http.StatusFound, "/login")
 	}
 }

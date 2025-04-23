@@ -4,40 +4,19 @@ import (
 	"gorm.io/gorm"
 )
 
-type Student struct {
-	gorm.Model
-	Name     string `json:"name"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-type Manager struct {
-	gorm.Model
-	Name     string `json:"name"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-type Instructor struct {
-	gorm.Model
-	Name     string `json:"name"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
 type Course struct {
 	gorm.Model
 	Name         string `json:"name"`
 	InstructorID uint
-	Instructor   Instructor
-	Semester     string `json:"semester"`
+	Instructor   User
+	Attendances  []Attendance
 }
 
 type Attendance struct {
 	gorm.Model
 	StudentID uint
 	CourseID  uint
-	Student   Student
+	Student   User
 	Course    Course
 	Grade     float32 `json:"grade"`
 }
