@@ -48,7 +48,7 @@ func GetAttendableClasses(db *gorm.DB) func(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		classes := use_cases.GetClasses(db, courseID)
+		classes := use_cases.GetOpenClasses(db, courseID)
 		c.JSON(http.StatusOK, gin.H{
 			"classes": classes,
 		})

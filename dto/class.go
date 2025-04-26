@@ -20,7 +20,7 @@ type ClassDto struct {
 	ID           uint
 	Name         string
 	Instructor   data.User
-	Course       data.Course
+	Course       *data.Course
 	SlotTotal    uint
 	SlotEquipped uint
 }
@@ -30,7 +30,6 @@ func FromClass(class data.Class) ClassDto {
 		ID:           class.ID,
 		Name:         class.Course.Name,
 		Instructor:   class.Instructor,
-		Course:       class.Course,
 		SlotTotal:    class.SlotTotal,
 		SlotEquipped: class.SlotEquipped,
 	}

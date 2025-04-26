@@ -21,7 +21,7 @@ func GetCourses(db *gorm.DB) []dto.CourseDto {
 	return utils.Map(courses, dto.FromCourse)
 }
 
-func GetClasses(db *gorm.DB, courseID uint) []dto.ClassDto {
+func GetOpenClasses(db *gorm.DB, courseID uint) []dto.ClassDto {
 	var classes []models.Class
 	db.Preload("Course").Preload("Instructor").Where("course_id = ?", courseID).Find(&classes)
 	return utils.Map(classes, dto.FromClass)
