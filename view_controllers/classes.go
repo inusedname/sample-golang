@@ -25,9 +25,9 @@ func GetTimetable(db *gorm.DB) func(c *gin.Context) {
 		}
 		userID := c.MustGet("id").(middleware.MyClaims).UserID
 		log.Printf("User ID: %v", userID)
-		classes := use_cases.GetStudentAttendances(db, userID)
+		attendances := use_cases.GetStudentAttendances(db, userID)
 		c.JSON(http.StatusOK, gin.H{
-			"classes": classes,
+			"attendances": attendances,
 		})
 	}
 }
@@ -63,7 +63,7 @@ func JoinClass(db *gorm.DB) func(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
+		log.Printf("Student ID: %v", studentId)
 		attendance, error := use_cases.JoinClass(db, classID, studentId)
 		if error != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": error.Error()})

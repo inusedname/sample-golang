@@ -54,7 +54,11 @@ type MyClaims struct {
 func identityHandler() func(*gin.Context) any {
 	return func(c *gin.Context) any {
 		mapClaims := ginjwt.ExtractClaims(c)
-		user_id, _ := mystrconv.Atoui(fmt.Sprintf("%f", mapClaims[constants.IdentityKey]))
+		user_id, err := mystrconv.Atoui(fmt.Sprintf("%.0f", mapClaims[constants.IdentityKey]))
+		if err != nil {
+			log.Printf("Error converting user_id to uint: %v", err)
+			return nil
+		}
 		return MyClaims{
 			UserID: user_id,
 		}
