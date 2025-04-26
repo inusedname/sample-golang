@@ -3,11 +3,13 @@ package middleware
 import (
 	"app/constants"
 	models "app/data"
+	mystrconv "app/utils/strconv"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
 
-	jwt "github.com/appleboy/gin-jwt/v2"
+	ginjwt "github.com/appleboy/gin-jwt/v2"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -17,19 +19,19 @@ type login struct {
 	Password string `form:"password" json:"password" binding:"required"`
 }
 
-func InitParams(db *gorm.DB) *jwt.GinJWTMiddleware {
+func InitParams(db *gorm.DB) *ginjwt.GinJWTMiddleware {
 
-	return &jwt.GinJWTMiddleware{
-		Realm:       "test zone",
-		Key:         []byte("secret key"),
-		Timeout:     time.Hour,
-		MaxRefresh:  time.Hour,
-		IdentityKey: constants.IdentityKey,
-		PayloadFunc: payloadFunc(),
-
-		Authenticator: authenticator(db),
-		Unauthorized:  unauthorized(),
-		TokenLookup:   "header: Authorization, query: token, cookie: jwt",
+	return &ginjwt.GinJWTMiddleware{
+		Realm:           "test zone",
+		Key:             []byte("secret key"),
+		Timeout:         time.Hour,
+		MaxRefresh:      time.Hour,
+		IdentityKey:     constants.IdentityKey,
+		PayloadFunc:     payloadFunc(),
+		IdentityHandler: identityHandler(),
+		Authenticator:   authenticator(db),
+		Unauthorized:    unauthorized(),
+		TokenLookup:     "header: Authorization, query: token, cookie: jwt",
 		// TokenLookup: "query:token",
 		// TokenLookup: "cookie:token",
 		TokenHeadName: "Bearer",
@@ -42,19 +44,32 @@ func InitParams(db *gorm.DB) *jwt.GinJWTMiddleware {
 		CookieSameSite: http.SameSiteDefaultMode,
 
 		LoginResponse: func(c *gin.Context, code int, message string, time time.Time) {
-			c.Redirect(http.StatusFound, "/classes")
 		},
 	}
 }
 
-func payloadFunc() func(data any) jwt.MapClaims {
-	return func(data any) jwt.MapClaims {
+type MyClaims struct {
+	UserID uint
+}
+
+func identityHandler() func(*gin.Context) any {
+	return func(c *gin.Context) any {
+		mapClaims := ginjwt.ExtractClaims(c)
+		user_id, _ := mystrconv.Atoui(fmt.Sprintf("%f", mapClaims[constants.IdentityKey]))
+		return MyClaims{
+			UserID: user_id,
+		}
+	}
+}
+
+func payloadFunc() func(data any) ginjwt.MapClaims {
+	return func(data any) ginjwt.MapClaims {
 		if v, ok := data.(*models.User); ok {
-			return jwt.MapClaims{
+			return ginjwt.MapClaims{
 				constants.IdentityKey: v.ID,
 			}
 		}
-		return jwt.MapClaims{}
+		return ginjwt.MapClaims{}
 	}
 }
 
@@ -62,7 +77,7 @@ func authenticator(db *gorm.DB) func(c *gin.Context) (any, error) {
 	return func(c *gin.Context) (any, error) {
 		var loginVals login
 		if err := c.ShouldBind(&loginVals); err != nil {
-			return "", jwt.ErrMissingLoginValues
+			return "", ginjwt.ErrMissingLoginValues
 		}
 		userID := loginVals.Username
 		password := loginVals.Password
@@ -72,7 +87,7 @@ func authenticator(db *gorm.DB) func(c *gin.Context) (any, error) {
 
 		if result.Error != nil {
 			log.Printf("Database error: %v", result.Error)
-			return nil, jwt.ErrFailedAuthentication
+			return nil, ginjwt.ErrFailedAuthentication
 		}
 		var user models.User
 		db.Where("user_credential_id = ?", userCred.ID).First(&user)
@@ -82,7 +97,5 @@ func authenticator(db *gorm.DB) func(c *gin.Context) (any, error) {
 
 func unauthorized() func(c *gin.Context, code int, message string) {
 	return func(c *gin.Context, code int, message string) {
-		log.Printf("unauthorized, redirect to login.")
-		c.Redirect(http.StatusFound, "/login")
 	}
 }

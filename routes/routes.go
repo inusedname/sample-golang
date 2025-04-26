@@ -14,25 +14,23 @@ func RegisterRoute(container *dig.Container, r *gin.Engine, handle *jwt.GinJWTMi
 	r.LoadHTMLGlob("html/*")
 	r.NoRoute(handle.MiddlewareFunc(), handleNoRoute())
 
-	r.POST("/login", handle.LoginHandler)
-	r.GET("/login", func(c *gin.Context) {
-		c.HTML(200, "login.html", nil)
-	})
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(200, "index.html", nil)
 	})
 
+	RequireSignedIn := handle.MiddlewareFunc()
+
+	api := r.Group("/api")
 	container.Invoke(func(db gorm.DB) {
-		r.GET("/signup", viewcontrollers.HandleGetSignup)
-		r.POST("/signup", viewcontrollers.HandlePostSignup(&db))
-		r.GET(
-			"/classes",
-			handle.MiddlewareFunc(),
-			viewcontrollers.GetStudentClasses(&db),
-		)
+		api.POST("/login", handle.LoginHandler)
+		api.POST("/signup", viewcontrollers.HandlePostSignup(&db))
+		student_group := api.Group("/student", RequireSignedIn)
+		student_group.GET("/classes/attended", viewcontrollers.GetAttendedClasses(&db))
+		student_group.GET("/classes/courses", viewcontrollers.GetCourses(&db))
+		student_group.GET("/classes/attend/:course_id", viewcontrollers.GetAttendableClasses(&db))
 	})
 
-	auth := r.Group("/auth", handle.MiddlewareFunc())
+	auth := r.Group("/auth", RequireSignedIn)
 	auth.GET("/refresh_token", handle.RefreshHandler)
 }
 

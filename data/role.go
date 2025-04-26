@@ -10,6 +10,13 @@ type User struct {
 	UserPermissionDef   UserPermissionDef
 	UserCredentialID    uint
 	UserCredential      UserCredential
+	StudentInfoID       uint
+	StudentInfo         StudentInfo
+}
+
+type StudentInfo struct {
+	gorm.Model
+	semester string
 }
 
 type UserCredential struct {
@@ -32,7 +39,7 @@ func NewUserPermissionDef(role string) UserPermissionDef {
 	case "student":
 		return UserPermissionDef{
 			ViewAttendance:   true,
-			CreateAttendance: true,
+			CreateAttendance: false,
 		}
 	case "teacher":
 		return UserPermissionDef{

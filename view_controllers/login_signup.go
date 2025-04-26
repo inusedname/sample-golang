@@ -28,11 +28,9 @@ func HandlePostSignup(db *gorm.DB) func(c *gin.Context) {
 		fullName := c.Request.FormValue("fullName")
 		role := c.Request.FormValue("role")
 		if err := use_cases.CreateUser(db, username, password, email, fullName, role); err != nil {
-			c.HTML(http.StatusBadRequest, "signup.html", signUpData{
-				Error: err.Error(),
-			})
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		c.Redirect(http.StatusFound, "/login")
+		c.JSON(http.StatusOK, gin.H{"message": "User created successfully"})
 	}
 }
