@@ -11,7 +11,6 @@ import (
 )
 
 func RegisterRoute(container *dig.Container, r *gin.Engine, handle *jwt.GinJWTMiddleware) {
-	r.LoadHTMLGlob("html/*")
 	r.NoRoute(handle.MiddlewareFunc(), handleNoRoute())
 
 	r.GET("/", func(c *gin.Context) {
@@ -25,9 +24,11 @@ func RegisterRoute(container *dig.Container, r *gin.Engine, handle *jwt.GinJWTMi
 		api.POST("/login", handle.LoginHandler)
 		api.POST("/signup", viewcontrollers.HandlePostSignup(&db))
 		student_group := api.Group("/student", RequireSignedIn)
-		student_group.GET("/classes/attended", viewcontrollers.GetAttendedClasses(&db))
-		student_group.GET("/classes/courses", viewcontrollers.GetCourses(&db))
-		student_group.GET("/classes/attend/:course_id", viewcontrollers.GetAttendableClasses(&db))
+		student_group.GET("/classes", viewcontrollers.GetTimetable(&db))
+		student_group.GET("/open-courses", viewcontrollers.GetCourses(&db))
+		student_group.GET("/open-classes/:course_id", viewcontrollers.GetAttendableClasses(&db))
+		student_group.POST("/classes/attend/:course_id", viewcontrollers.JoinClass(&db))
+		student_group.GET("/classes/:class_id", viewcontrollers.GetClassInfo(&db))
 	})
 
 	auth := r.Group("/auth", RequireSignedIn)

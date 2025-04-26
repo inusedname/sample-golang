@@ -1,22 +1,36 @@
 package data
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type User struct {
-	gorm.Model
+	ID                  uint           `gorm:"primarykey"`
+	CreatedAt           time.Time      `json:"-"`
+	UpdatedAt           time.Time      `json:"-"`
+	DeletedAt           gorm.DeletedAt `gorm:"index" json:"-"`
 	FullName            string
-	Email               string `gorm:"primaryKey"`
-	UserPermissionDefID uint
-	UserPermissionDef   UserPermissionDef
-	UserCredentialID    uint
-	UserCredential      UserCredential
-	StudentInfoID       uint
-	StudentInfo         StudentInfo
+	Email               string            `gorm:"unique"`
+	UserPermissionDefID uint              `json:"-"`
+	UserPermissionDef   UserPermissionDef `json:"-"`
+	UserCredentialID    uint              `json:"-"`
+	UserCredential      UserCredential    `json:"-"`
+	StudentInfoID       *uint             `json:"-"`
+	StudentInfo         *StudentInfo      `json:"omitempty"`
+	TeacherInfoID       *uint             `json:"-"`
+	TeacherInfo         *TeacherInfo      `json:"omitempty"`
 }
 
 type StudentInfo struct {
 	gorm.Model
-	semester string
+	Semester string
+}
+
+type TeacherInfo struct {
+	gorm.Model
+	Majors []Course `gorm:"many2many:teacher_majors;"`
 }
 
 type UserCredential struct {

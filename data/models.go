@@ -25,9 +25,13 @@ type Class struct {
 }
 
 type Attendance struct {
-	gorm.Model
-	StudentID uint
-	Student   User
-	ClassID   uint
+	ID        uint           `gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"-"`
+	UpdatedAt time.Time      `json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	StudentID uint           `gorm:"unique" json:"-"`
+	Student   *User
+	ClassID   uint `gorm:"unique" json:"-"`
+	Class     *Class
 	Grade     float32 `json:"grade"`
 }

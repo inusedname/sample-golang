@@ -5,7 +5,6 @@ import (
 	"app/middleware"
 	"app/use_cases"
 	"app/utils/strconv"
-	"html/template"
 	"log"
 	"net/http"
 
@@ -17,24 +16,7 @@ type studentClassesData struct {
 	Attendances []models.Attendance
 }
 
-func GetStudentClasses(db *gorm.DB) func(c *gin.Context) {
-	return func(c *gin.Context) {
-		tmpl := template.Must(template.ParseFiles("html/student_attendances.html"))
-		var user = models.GetUser(db, c)
-		if !user.UserPermissionDef.ViewAttendance {
-			c.HTML(403, "unauthorized.html", gin.H{
-				"Reason": "You don't have permission to view classes",
-			})
-			return
-		}
-		attendances := use_cases.GetStudentAttendances(db, user.ID)
-		tmpl.Execute(c.Writer, studentClassesData{
-			Attendances: attendances,
-		})
-	}
-}
-
-func GetAttendedClasses(db *gorm.DB) func(c *gin.Context) {
+func GetTimetable(db *gorm.DB) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		user := models.GetUser(db, c)
 		if !user.UserPermissionDef.ViewAttendance {
@@ -69,6 +51,44 @@ func GetAttendableClasses(db *gorm.DB) func(c *gin.Context) {
 		classes := use_cases.GetClasses(db, courseID)
 		c.JSON(http.StatusOK, gin.H{
 			"classes": classes,
+		})
+	}
+}
+
+func JoinClass(db *gorm.DB) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		studentId := c.MustGet("id").(middleware.MyClaims).UserID
+		classID, err := strconv.Atoui(c.Param("course_id"))
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		attendance, error := use_cases.JoinClass(db, classID, studentId)
+		if error != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": error.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"attendance": attendance,
+		})
+	}
+}
+
+type ClassInfo struct {
+	Students []models.User
+}
+
+func GetClassInfo(db *gorm.DB) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		classID, err := strconv.Atoui(c.Param("class_id"))
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		students := use_cases.GetClassStudents(db, classID)
+		c.JSON(http.StatusOK, gin.H{
+			"students": students,
 		})
 	}
 }

@@ -30,7 +30,6 @@ func InitParams(db *gorm.DB) *ginjwt.GinJWTMiddleware {
 		PayloadFunc:     payloadFunc(),
 		IdentityHandler: identityHandler(),
 		Authenticator:   authenticator(db),
-		Unauthorized:    unauthorized(),
 		TokenLookup:     "header: Authorization, query: token, cookie: jwt",
 		// TokenLookup: "query:token",
 		// TokenLookup: "cookie:token",
@@ -73,11 +72,14 @@ func payloadFunc() func(data any) ginjwt.MapClaims {
 	}
 }
 
+// If you mess up with payload (missing required fields), then c.Bind will detect it and set err code to 400. Afterward even if gin-jwt
+// return 401, the err code will still be 400.
 func authenticator(db *gorm.DB) func(c *gin.Context) (any, error) {
 	return func(c *gin.Context) (any, error) {
 		var loginVals login
-		if err := c.ShouldBind(&loginVals); err != nil {
-			return "", ginjwt.ErrMissingLoginValues
+		if err := c.Bind(&loginVals); err != nil {
+			// implicit when missing field: c.AbortWithError(http.StatusBadRequest, err).SetType(ErrorTypeBind)
+			return nil, ginjwt.ErrMissingLoginValues
 		}
 		userID := loginVals.Username
 		password := loginVals.Password
@@ -92,10 +94,5 @@ func authenticator(db *gorm.DB) func(c *gin.Context) (any, error) {
 		var user models.User
 		db.Where("user_credential_id = ?", userCred.ID).First(&user)
 		return &user, nil
-	}
-}
-
-func unauthorized() func(c *gin.Context, code int, message string) {
-	return func(c *gin.Context, code int, message string) {
 	}
 }
